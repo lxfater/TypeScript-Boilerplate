@@ -1,5 +1,6 @@
 import { mkdir, mkdirSync, readFileSync, writeFile, writeFileSync } from 'fs';
 import { join } from 'path';
+import { exit } from 'process';
 import puppeteer, { Page } from 'puppeteer-core';
 export interface Project {
     '项目id': string,
@@ -77,9 +78,9 @@ async function clipJob(configPath: string) {
     const executablePath = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
     const options = {
         executablePath,
-        headless: false,
+        headless: true,
         ignoreHTTPSErrors: true,
-        args: [`--window-size=1920,1080`, `--use-gl=angle`], // 解决无头浏览器的webgl不显示问题 `--use-gl=egl`
+        args: [`--window-size=1920,1080`, `--use-gl=angle` , `--js-flags="--max-old-space-size=4096"` ], // 解决无头浏览器的webgl不显示问题 `--use-gl=egl`
         defaultViewport: {
             width: 1920,
             height: 1080
@@ -108,7 +109,8 @@ async function clipJob(configPath: string) {
             path.push(child.label)
             for await (const job of jobs) {
                 path.push(job.模型日期)
-                let dir = join(__dirname, path.join('/'))
+                let dirConfig = join(__dirname, '../', 'data')
+                let dir = join(dirConfig, path.join('/'))
                 mkdirSync(dir, {
                     recursive: true
                 })
@@ -123,6 +125,7 @@ async function clipJob(configPath: string) {
                     })
                     await goto(page, config)
                     await page.waitForNetworkIdle()
+                    await page.waitForTimeout(500)
                     let path = join(dir, `${c.label}.png`)
                     await screenshot(page, path)
                 }
@@ -133,7 +136,7 @@ async function clipJob(configPath: string) {
         path.pop()
     }
 
-    console.log('end')
+    exit();
 
 }
 clipJob('./src/setting.json');
